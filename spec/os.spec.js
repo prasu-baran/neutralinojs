@@ -372,13 +372,15 @@ describe('os.spec: os namespace tests', () => {
             assert.ok(envs['PATH'] || envs['Path']);
         });
 
-        it('contains npm_command environment variable', async () => {
+        it('contains npm lifecycle environment variables', async () => {
             runner.run(`
                 let envs = await Neutralino.os.getEnvs();
                 await __close(JSON.stringify(envs));
             `);
             let envs = JSON.parse(runner.getOutput());
-            assert.ok(envs['npm_command']);
+            // npm_command (npm 7+) or npm_lifecycle_event (npm 2+) is set when running via "npm run"
+            assert.ok(envs['npm_command'] || envs['npm_lifecycle_event'],
+                'Expected at least one npm lifecycle env variable to be present');
         });
 
         it('checks case sensitivity of environment variable keys', async () => {

@@ -221,15 +221,20 @@ describe('window.spec: window namespace tests', () => {
         it('moves the window and verifies the new position', async () => {
             const newX = 100;
             const newY = 150;
-    
+
             runner.run(`
                 await Neutralino.window.move(${newX}, ${newY});
                 const position = await Neutralino.window.getPosition();
                 await __close(JSON.stringify(position));
             `);
-    
-            const expectedPosition = JSON.stringify({ x: newX, y: newY });
-            assert.equal(runner.getOutput(), expectedPosition);
+
+            const position = JSON.parse(runner.getOutput());
+            const TOLERANCE = 10; // window managers on CI may apply small offsets
+            assert.ok(typeof position === 'object');
+            assert.ok(Math.abs(position.x - newX) <= TOLERANCE,
+                `x=${position.x} not within ${TOLERANCE}px of expected ${newX}`);
+            assert.ok(Math.abs(position.y - newY) <= TOLERANCE,
+                `y=${position.y} not within ${TOLERANCE}px of expected ${newY}`);
         });
     });
 
@@ -339,16 +344,21 @@ describe('window.spec: window namespace tests', () => {
         it('sets the window to always be on top and verifies the position remains unchanged', async () => {
             const initialX = 50;
             const initialY = 100;
-    
+
             runner.run(`
                 await Neutralino.window.move(${initialX}, ${initialY});
                 await Neutralino.window.setAlwaysOnTop(true);
                 const position = await Neutralino.window.getPosition();
                 await __close(JSON.stringify(position));
             `);
-    
-            const expectedPosition = JSON.stringify({ x: initialX, y: initialY });
-            assert.equal(runner.getOutput(), expectedPosition);
+
+            const position = JSON.parse(runner.getOutput());
+            const TOLERANCE = 10; // window managers on CI may apply small offsets
+            assert.ok(typeof position === 'object');
+            assert.ok(Math.abs(position.x - initialX) <= TOLERANCE,
+                `x=${position.x} not within ${TOLERANCE}px of expected ${initialX}`);
+            assert.ok(Math.abs(position.y - initialY) <= TOLERANCE,
+                `y=${position.y} not within ${TOLERANCE}px of expected ${initialY}`);
         });
     });
 

@@ -1007,6 +1007,7 @@ describe('filesystem.spec: filesystem namespace tests', () => {
                         await __close(JSON.stringify(evt.detail));
                     }
                 });
+                await new Promise(resolve => setTimeout(resolve, 500));
                 await Neutralino.filesystem.createDirectory(NL_PATH + '/.tmp/new-dir');
             `);
             let data = JSON.parse(runner.getOutput());
@@ -1131,13 +1132,24 @@ describe('filesystem.spec: filesystem namespace tests', () => {
     });
 
     describe('filesystem.getPathParts', () => {
+        // Normalize backslashes to forward slashes for cross-platform path comparison
+        function normalizePaths(obj) {
+            const result = {...obj};
+            for (const key of ['parentPath', 'relativePath', 'rootDirectory', 'rootPath']) {
+                if (typeof result[key] === 'string') {
+                    result[key] = result[key].replace(/\\/g, '/');
+                }
+            }
+            return result;
+        }
+
         it('returns path parts for a valid file path with no extension', async () => {
             runner.run(`
                 let path = NL_PATH + '/folder/file';
                 let response = await Neutralino.filesystem.getPathParts(path);
                 await __close(JSON.stringify(response));
             `);
-            const output = JSON.parse(runner.getOutput());
+            const output = normalizePaths(JSON.parse(runner.getOutput()));
             assert.deepEqual(output, {
                 extension: '',
                 filename: 'file',
@@ -1149,14 +1161,14 @@ describe('filesystem.spec: filesystem namespace tests', () => {
                 stem: 'file'
               });
         });
-    
+
         it('returns path parts for a file path with a single dot extension', async () => {
             runner.run(`
                 let path = NL_PATH + '/folder/.hiddenfile';
                 let response = await Neutralino.filesystem.getPathParts(path);
                 await __close(JSON.stringify(response));
             `);
-            const output = JSON.parse(runner.getOutput());
+            const output = normalizePaths(JSON.parse(runner.getOutput()));
             assert.deepEqual(output, {
                 extension: '',
                 filename: '.hiddenfile',
@@ -1168,14 +1180,14 @@ describe('filesystem.spec: filesystem namespace tests', () => {
                 stem: '.hiddenfile'
               });
         });
-    
+
         it('returns path parts for a path with special characters', async () => {
             runner.run(`
                 let path = NL_PATH + '/folder/special@file#name.txt';
                 let response = await Neutralino.filesystem.getPathParts(path);
                 await __close(JSON.stringify(response));
             `);
-            const output = JSON.parse(runner.getOutput());
+            const output = normalizePaths(JSON.parse(runner.getOutput()));
             assert.deepEqual(output, {
                 extension: '.txt',
                 filename: 'special@file#name.txt',
@@ -1187,14 +1199,14 @@ describe('filesystem.spec: filesystem namespace tests', () => {
                 stem: 'special@file#name'
               });
         });
-    
+
         it('returns path parts for a root path', async () => {
             runner.run(`
                 let path = NL_PATH;
                 let response = await Neutralino.filesystem.getPathParts(path);
                 await __close(JSON.stringify(response));
             `);
-            const output = JSON.parse(runner.getOutput());
+            const output = normalizePaths(JSON.parse(runner.getOutput()));
             assert.deepEqual(output, {
                 extension: '',
                 filename: 'bin',
@@ -1206,14 +1218,14 @@ describe('filesystem.spec: filesystem namespace tests', () => {
                 stem: 'bin'
               });
         });
-    
+
         it('returns path parts for a path with a root directory', async () => {
             runner.run(`
                 let path = NL_PATH + '/root/directory/file.txt';
                 let response = await Neutralino.filesystem.getPathParts(path);
                 await __close(JSON.stringify(response));
             `);
-            const output = JSON.parse(runner.getOutput());
+            const output = normalizePaths(JSON.parse(runner.getOutput()));
             assert.deepEqual(output, {
                 extension: '.txt',
                 filename: 'file.txt',
@@ -1225,14 +1237,14 @@ describe('filesystem.spec: filesystem namespace tests', () => {
                 stem: 'file'
               });
         });
-    
+
         it('returns path parts for a path with multiple nested directories', async () => {
             runner.run(`
                 let path = NL_PATH + '/nested/dir/structure/file.ext';
                 let response = await Neutralino.filesystem.getPathParts(path);
                 await __close(JSON.stringify(response));
             `);
-            const output = JSON.parse(runner.getOutput());
+            const output = normalizePaths(JSON.parse(runner.getOutput()));
             assert.deepEqual(output, {
                 extension: '.ext',
                 filename: 'file.ext',
@@ -1244,14 +1256,14 @@ describe('filesystem.spec: filesystem namespace tests', () => {
                 stem: 'file'
               });
         });
-    
+
         it('returns path parts for a path with a filename that starts with a dot', async () => {
             runner.run(`
                 let path = NL_PATH + '/folder/.config/file.txt';
                 let response = await Neutralino.filesystem.getPathParts(path);
                 await __close(JSON.stringify(response));
             `);
-            const output = JSON.parse(runner.getOutput());
+            const output = normalizePaths(JSON.parse(runner.getOutput()));
             assert.deepEqual(output, {
                 extension: '.txt',
                 filename: 'file.txt',
@@ -1263,14 +1275,14 @@ describe('filesystem.spec: filesystem namespace tests', () => {
                 stem: 'file'
               });
         });
-    
+
         it('returns path parts for a path with absolute path separators', async () => {
             runner.run(`
                 let path = '/absolute/path/to/file.txt';
                 let response = await Neutralino.filesystem.getPathParts(path);
                 await __close(JSON.stringify(response));
             `);
-            const output = JSON.parse(runner.getOutput());
+            const output = normalizePaths(JSON.parse(runner.getOutput()));
             assert.deepEqual(output, {
                 extension: '.txt',
                 filename: 'file.txt',
