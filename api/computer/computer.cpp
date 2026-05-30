@@ -523,6 +523,10 @@ json getNetworkInterfaces(const json &input) {
     if(helpers::hasField(input, "excludeLoopback")){
         excludeLoopback = input["excludeLoopback"].get<bool>();
     }
+    fprintf(stderr,
+        "[network] excludeLoopback=%s\n",
+        excludeLoopback ? "true" : "false");
+    fflush(stderr);
 
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__APPLE__)
     struct ifaddrs *ifap, *ifa;
@@ -540,7 +544,20 @@ json getNetworkInterfaces(const json &input) {
         bool isLoopback = (ifa->ifa_flags & IFF_LOOPBACK) != 0;
         bool isUp = (ifa->ifa_flags & IFF_UP) != 0;
 
-        if(excludeLoopback && isLoopback) continue;
+        fprintf(stderr,
+        "[network] iface=%s loopback=%d family=%d\n",
+        ifa->ifa_name,
+        isLoopback,
+        ifa->ifa_addr->sa_family);
+        fflush(stderr);
+
+        if(excludeLoopback && isLoopback) {
+    fprintf(stderr,
+        "[network] skipping loopback %s\n",
+        ifa->ifa_name);
+    fflush(stderr);
+    continue;
+}
 
         if(ifaceIndex.find(ifName) == ifaceIndex.end()) {
             json iface = {
@@ -681,10 +698,12 @@ json getNetworkInterfaces(const json &input) {
 
         output["returnValue"].push_back(iface);
     }
-
-    free(pAddresses);
+    
 #endif
-
+    fprintf(stderr,
+        "[network] returning %zu interfaces\n",
+        output["returnValue"].size());
+    fflush(stderr);
     output["success"] = true;
     return output;
 }
