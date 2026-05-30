@@ -520,8 +520,7 @@ json getNetworkInterfaces(const json &input) {
     output["returnValue"] = json::array();
 
     bool excludeLoopback = false;
-    if(helpers::hasField(input,"data") &&
-        helpers::hasField(input, "excludeLoopback")){
+    if(helpers::hasField(input, "excludeLoopback")){
         excludeLoopback = input["excludeLoopback"].get<bool>();
     }
 
@@ -581,16 +580,35 @@ json getNetworkInterfaces(const json &input) {
         }
         #elif defined(__APPLE__) || defined(__FreeBSD__)
         else if(ifa->ifa_addr->sa_family == AF_LINK) {
-            struct sockaddr_dl *sdl = (struct sockaddr_dl *)ifa->ifa_addr;
-            if(sdl->sdl_alen == 6) {
-                unsigned char *macPtr = (unsigned char *)LLADDR(sdl);
-                char mac[18];
-                snprintf(mac, sizeof(mac), "%02x:%02x:%02x:%02x:%02x:%02x",
-                    macPtr[0], macPtr[1], macPtr[2],
-                    macPtr[3], macPtr[4], macPtr[5]);
-                output["returnValue"][idx]["mac"] = string(mac);
-            }
-        }
+    struct sockaddr_dl *sdl =
+        reinterpret_cast<struct sockaddr_dl *>(ifa->ifa_addr);
+
+    if(!sdl)
+        continue;
+
+    if(sdl->sdl_alen != 6)
+        continue;
+
+    unsigned char *macPtr =
+        reinterpret_cast<unsigned char *>(LLADDR(sdl));
+
+    if(!macPtr)
+        continue;
+
+    char mac[18];
+
+    snprintf(mac,
+            sizeof(mac),
+            "%02x:%02x:%02x:%02x:%02x:%02x",
+            macPtr[0],
+            macPtr[1],
+            macPtr[2],
+            macPtr[3],
+            macPtr[4],
+            macPtr[5]);
+
+    output["returnValue"][idx]["mac"] = string(mac);
+}
         #endif
     }
 
